@@ -1,0 +1,138 @@
+CRUD con CSV y Diccionarios (versión hiper comentada)
+
+# ------------------------------------------------------------
+# Importamos librerías necesarias
+# ------------------------------------------------------------
+import csv   # 'csv' es una librería estándar de Python que permite leer y escribir archivos CSV.
+import os    # 'os' es otra librería estándar que sirve para interactuar con el sistema operativo (ej: borrar archivos).
+
+# ------------------------------------------------------------
+# FUNCIÓN: Crear un archivo CSV con datos iniciales
+# ------------------------------------------------------------
+def crear_csv(nombre_archivo):
+    """
+    Esta función crea un archivo CSV nuevo con encabezados y datos iniciales.
+    - 'nombre_archivo' es el nombre del archivo que vamos a crear.
+    """
+
+    # Abrimos el archivo en modo escritura ("w") → esto crea el archivo o lo sobrescribe si ya existe.
+    # 'newline=""' evita que se agreguen líneas en blanco extra.
+    # 'encoding="utf-8"' asegura que se guarden caracteres especiales (como tildes).
+    with open(nombre_archivo, mode="w", newline="", encoding="utf-8") as archivo:
+
+        # Definimos los nombres de las columnas (encabezados del CSV).
+        campos = ["id", "nombre", "edad"]
+
+        # Creamos un "escritor" especial que trabaja con diccionarios.
+        # 'DictWriter' permite escribir filas usando claves (ej: {"id":1,"nombre":"Carlos","edad":25}).
+        escritor = csv.DictWriter(archivo, fieldnames=campos)
+
+        # Escribimos la primera fila con los encabezados.
+        escritor.writeheader()
+
+        # Escribimos algunas filas de ejemplo (cada fila es un diccionario).
+        escritor.writerow({"id": 1, "nombre": "Carlos", "edad": 25})
+        escritor.writerow({"id": 2, "nombre": "Ana", "edad": 30})
+        escritor.writerow({"id": 3, "nombre": "Luis", "edad": 28})
+
+    # Mensaje para confirmar que el archivo fue creado.
+    print("✅ CSV creado con datos iniciales.")
+
+
+# ------------------------------------------------------------
+# FUNCIÓN: Leer archivo CSV y mostrar registros
+# ------------------------------------------------------------
+def leer_csv(nombre_archivo):
+    """
+    Esta función abre el archivo CSV en modo lectura y muestra cada fila.
+    """
+
+    # Abrimos el archivo en modo lectura ("r").
+    with open(nombre_archivo, mode="r", encoding="utf-8") as archivo:
+
+        # Creamos un "lector" especial que convierte cada fila en un diccionario.
+        # Ejemplo: {"id":"1","nombre":"Carlos","edad":"25"}
+        lector = csv.DictReader(archivo)
+
+        # Recorremos cada fila del archivo.
+        for fila in lector:
+            # Mostramos los valores accediendo por clave.
+            print(f"ID: {fila['id']}, Nombre: {fila['nombre']}, Edad: {fila['edad']}")
+
+
+# ------------------------------------------------------------
+# FUNCIÓN: Actualizar un registro por ID
+# ------------------------------------------------------------
+def actualizar_csv(nombre_archivo, id_objetivo, nuevo_nombre, nueva_edad):
+    """
+    Esta función busca un registro por su 'id' y lo actualiza.
+    """
+
+    filas = []  # Lista vacía para guardar todas las filas.
+
+    # Abrimos el archivo en modo lectura para cargar todas las filas.
+    with open(nombre_archivo, mode="r", encoding="utf-8") as archivo:
+        lector = csv.DictReader(archivo)
+        for fila in lector:
+            # Si el ID coincide con el que queremos actualizar...
+            if fila["id"] == str(id_objetivo):
+                # Cambiamos los valores de nombre y edad.
+                fila["nombre"] = nuevo_nombre
+                fila["edad"] = str(nueva_edad)
+            # Guardamos la fila (modificada o no) en la lista.
+            filas.append(fila)
+
+    # Abrimos el archivo en modo escritura para reescribirlo completo.
+    with open(nombre_archivo, mode="w", newline="", encoding="utf-8") as archivo:
+        campos = ["id", "nombre", "edad"]  # Definimos los encabezados.
+        escritor = csv.DictWriter(archivo, fieldnames=campos)
+        escritor.writeheader()             # Escribimos los encabezados otra vez.
+        escritor.writerows(filas)          # Escribimos todas las filas guardadas.
+
+    print(f"✏️ Registro con id={id_objetivo} actualizado.")
+
+
+# ------------------------------------------------------------
+# FUNCIÓN: Eliminar un registro por ID
+# ------------------------------------------------------------
+def eliminar_csv(nombre_archivo, id_objetivo):
+    """
+    Esta función elimina un registro del CSV según su 'id'.
+    """
+
+    filas = []  # Lista vacía para guardar las filas que queremos conservar.
+
+    # Abrimos el archivo en modo lectura.
+    with open(nombre_archivo, mode="r", encoding="utf-8") as archivo:
+        lector = csv.DictReader(archivo)
+        for fila in lector:
+            # Si el ID NO coincide con el que queremos eliminar, lo guardamos.
+            if fila["id"] != str(id_objetivo):
+                filas.append(fila)
+
+    # Reescribimos el archivo con las filas restantes.
+    with open(nombre_archivo, mode="w", newline="", encoding="utf-8") as archivo:
+        campos = ["id", "nombre", "edad"]
+        escritor = csv.DictWriter(archivo, fieldnames=campos)
+        escritor.writeheader()
+        escritor.writerows(filas)
+
+    print(f"🗑️ Registro con id={id_objetivo} eliminado.")
+
+
+# ------------------------------------------------------------
+# DEMO DEL CRUD
+# ------------------------------------------------------------
+nombre_archivo = "personas.csv"  # Nombre del archivo CSV que vamos a usar.
+
+crear_csv(nombre_archivo)        # Crear archivo inicial con datos.
+print("\n📖 Leyendo CSV inicial:")
+leer_csv(nombre_archivo)         # Leer y mostrar contenido.
+
+actualizar_csv(nombre_archivo, 2, "Andrea", 31)  # Actualizar registro con id=2.
+print("\n📖 CSV tras actualización:")
+leer_csv(nombre_archivo)
+
+eliminar_csv(nombre_archivo, 3)  # Eliminar registro con id=3.
+print("\n📖 CSV tras eliminación:")
+leer_csv(nombre_archivo)

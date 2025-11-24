@@ -1,0 +1,243 @@
+Ejemplo integrador: CRUD de personas (CSV + memoria) con validaciones y menú CLIck
+
+# ------------------------------------------------------------
+# MÓDULO: gestor_personas.py
+# Propósito: CRUD de personas con CSV + memoria + validaciones.
+# ------------------------------------------------------------
+
+import csv   # Permite trabajar con CSV (leer y escribir filas con encabezados).
+import os    # Permite verificar existencia de archivo y futuras operaciones (ej. borrar).
+
+# ------------------------------------------------------------
+# CONSTANTES DE CONFIGURACIÓN
+# ------------------------------------------------------------
+ARCHIVO = "personas.csv"     # Nombre del archivo donde persistimos datos.
+CAMPOS = ["id", "nombre", "edad"]  # Encabezados fijos del CSV: orden y nombres.
+
+# ------------------------------------------------------------
+# UTILIDADES BÁSICAS
+# ------------------------------------------------------------
+def es_entero_positivo(valor):
+    """
+    Verifica si 'valor' es un entero positivo.
+    - Útil para validar IDs y edades, evitando datos corruptos.
+    """
+    return isinstance(valor, int) and valor > 0
+
+
+def cargar_csv_a_memoria(ruta):
+    """
+    Lee el CSV y devuelve una lista de diccionarios.
+    - Cada fila del CSV se convierte en {'id': int, 'nombre': str, 'edad': int}.
+    - Si no existe, devuelve lista vacía (primer uso del sistema).
+    """
+    if not os.path.exists(ruta):
+        return []
+
+    datos = []
+    with open(ruta, mode="r", encoding="utf-8") as archivo:
+        lector = csv.DictReader(archivo)
+        for fila in lector:
+            # Convertimos 'id' y 'edad' a int para trabajar con tipos correctos.
+            persona = {
+                "id": int(fila["id"]),
+                "nombre": fila["nombre"],
+                "edad": int(fila["edad"])
+            }
+            datos.append(persona)
+    return datos
+
+
+def guardar_memoria_a_csv(ruta, lista_personas):
+    """
+    Reescribe el CSV completo desde la lista de diccionarios.
+    - Asegura consistencia entre memoria y disco.
+    - writeheader() crea/garantiza los encabezados.
+    """
+    with open(ruta, mode="w", newline="", encoding="utf-8") as archivo:
+        escritor = csv.DictWriter(archivo, fieldnames=CAMPOS)
+        escritor.writeheader()
+        for p in lista_personas:
+            escritor.writerow({
+                "id": p["id"],
+                "nombre": p["nombre"],
+                "edad": p["edad"]
+            })
+
+
+# ------------------------------------------------------------
+# CRUD EN MEMORIA CON VALIDACIONES
+# ------------------------------------------------------------
+def crear_persona(memoria, id, nombre, edad):
+    """
+    Crea una persona en memoria si pasa validaciones.
+    - Valida que 'id' y 'edad' sean enteros positivos.
+    - Valida que 'id' sea único (no duplicado).
+    - Valida 'nombre' no vacío.
+    """
+    if not es_entero_positivo(id):
+        return False, "ID inválido. Debe ser entero positivo."
+    if not es_entero_positivo(edad):
+        return False, "Edad inválida. Debe ser entero positivo."
+    if not isinstance(nombre, str) or not nombre.strip():
+        return False, "Nombre inválido. Debe ser texto no vacío."
+
+    # Verificar duplicado por ID (clave primaria lógica).
+    for p in memoria:
+        if p["id"] == id:
+            return False, f"El ID {id} ya existe."
+
+    # Si todas las validaciones pasan, agregamos.
+    memoria.append({"id": id, "nombre": nombre.strip(), "edad": edad})
+    return True, "Persona creada correctamente."
+
+
+def leer_personas(memoria):
+    """
+    Devuelve una copia (no referencia original) para imprimir/mostrar.
+    - Buen hábito: evitar exponer estructura interna directamente.
+    """
+    return list(memoria)
+
+
+def actualizar_persona(memoria, id, nuevo_nombre=None, nueva_edad=None):
+    """
+    Actualiza nombre y/o edad según parámetros no nulos.
+    - Valida que la persona exista por ID.
+    - Valida tipos y rangos antes de aplicar cambios.
+    - Permite actualizar parcialmente (solo nombre o solo edad).
+    """
+    # Buscar persona por ID
+    objetivo = None
+    for p in memoria:
+        if p["id"] == id:
+            objetivo = p
+            break
+
+    if objetivo is None:
+        return False, f"No existe persona con ID {id}."
+
+    if nuevo_nombre is not None:
+        if not isinstance(nuevo_nombre, str) or not nuevo_nombre.strip():
+            return False, "Nombre inválido."
+        objetivo["nombre"] = nuevo_nombre.strip()
+
+    if nueva_edad is not None:
+        if not es_entero_positivo(nueva_edad):
+            return False, "Edad inválida."
+        objetivo["edad"] = nueva_edad
+
+    return True, "Persona actualizada correctamente."
+
+
+def eliminar_persona(memoria, id):
+    """
+    Elimina una persona por ID.
+    - Valida existencia.
+    - Usa filtrado para remover sin mutar durante iteración.
+    """
+    antes = len(memoria)
+    memoria[:] = [p for p in memoria if p["id"] != id]  # mutación in-place (buena para mantener referencia)
+    if len(memoria) == antes:
+        return False, f"No existe persona con ID {id}."
+    return True, "Persona eliminada correctamente."
+
+
+# ------------------------------------------------------------
+# MENÚ CLI (Interfaz de línea de comandos)
+# ------------------------------------------------------------
+def imprimir_personas(personas):
+    """
+    Presenta personas de forma amigable para usuario.
+    - Evita prints 'raw' que no enseñan estructura.
+    """
+    if not personas:
+        print("No hay registros.")
+        return
+    for p in personas:
+        print(f"- ID: {p['id']} | Nombre: {p['nombre']} | Edad: {p['edad']}")
+
+
+def menu():
+    """
+    Menú principal del programa.
+    - Carga datos desde CSV al inicio.
+    - Sincroniza cambios al CSV después de cada operación exitosa.
+    - Ciclo hasta que el usuario decida salir.
+    """
+    memoria = cargar_csv_a_memoria(ARCHIVO)
+
+    while True:
+        print("\n===== MENÚ PERSONAS =====")
+        print("1. Crear persona")
+        print("2. Listar personas")
+        print("3. Actualizar persona")
+        print("4. Eliminar persona")
+        print("5. Salir")
+        opcion = input("Elige una opción (1-5): ").strip()
+
+        if opcion == "1":
+            try:
+                id = int(input("ID (entero positivo): ").strip())
+                nombre = input("Nombre: ").strip()
+                edad = int(input("Edad (entero positivo): ").strip())
+            except ValueError:
+                print("Error: ID y Edad deben ser enteros.")
+                continue
+
+            ok, msg = crear_persona(memoria, id, nombre, edad)
+            print(msg)
+            if ok:
+                guardar_memoria_a_csv(ARCHIVO, memoria)
+
+        elif opcion == "2":
+            imprimir_personas(leer_personas(memoria))
+
+        elif opcion == "3":
+            try:
+                id = int(input("ID de la persona a actualizar: ").strip())
+            except ValueError:
+                print("Error: ID debe ser entero.")
+                continue
+
+            nuevo_nombre = input("Nuevo nombre (deja vacío para no cambiar): ").strip()
+            nueva_edad_str = input("Nueva edad (deja vacío para no cambiar): ").strip()
+            nueva_edad = None
+            if nueva_edad_str:
+                try:
+                    nueva_edad = int(nueva_edad_str)
+                except ValueError:
+                    print("Error: Edad debe ser entero.")
+                    continue
+
+            # Si nombre vacío, interpretamos como no cambiar
+            if not nuevo_nombre:
+                nuevo_nombre = None
+
+            ok, msg = actualizar_persona(memoria, id, nuevo_nombre, nueva_edad)
+            print(msg)
+            if ok:
+                guardar_memoria_a_csv(ARCHIVO, memoria)
+
+        elif opcion == "4":
+            try:
+                id = int(input("ID de la persona a eliminar: ").strip())
+            except ValueError:
+                print("Error: ID debe ser entero.")
+                continue
+
+            ok, msg = eliminar_persona(memoria, id)
+            print(msg)
+            if ok:
+                guardar_memoria_a_csv(ARCHIVO, memoria)
+
+        elif opcion == "5":
+            print("Saliendo... ¡Hasta pronto!")
+            break
+        else:
+            print("Opción inválida. Elige un número de 1 a 5.")
+
+
+# Punto de entrada: ejecuta menú si corres el archivo directamente.
+if __name__ == "__main__":
+    menu()

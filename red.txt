@@ -1,0 +1,46 @@
+readme
+
+# 🧠 Proyecto CRUD de Personas en Python
+
+Este proyecto simula un sistema CRUD (Crear, Leer, Actualizar, Eliminar) para gestionar personas usando Python.  
+Está diseñado como ejercicio práctico para pruebas de desempeño en Riwi Medellín, y pensado para principiantes que quieren aprender paso a paso.
+
+---
+
+## 📌 ¿Qué incluye este proyecto?
+
+- ✅ CRUD completo usando diccionarios en memoria.
+- 📂 Versión con persistencia en archivos CSV.
+- 🛡️ Validaciones en cada operación (ID único, edad válida, nombre no vacío).
+- 🎨 Colores en consola para errores, éxitos y advertencias.
+- 📋 Menú interactivo en consola (CLI).
+- 📊 Diagramas de flujo estilo draw.io incluidos.
+- 🧠 Comentarios ultra detallados en cada línea del código.
+
+---
+
+## 🧪 ¿Qué habilidades se evalúan aquí?
+
+Este proyecto cubre las competencias típicas de una prueba de desempeño en Riwi:
+
+| Competencia               | ¿Está cubierta? | Detalle técnico y pedagógico                         |
+|---------------------------|----------------|------------------------------------------------------|
+| Lógica básica en Python   | ✅              | Condicionales, bucles, funciones, estructuras        |
+| CRUD en estructuras       | ✅              | Diccionarios, listas, CSV                            |
+| Validaciones              | ✅              | Tipos, rangos, duplicados, entradas vacías           |
+| Manejo de archivos        | ✅              | Lectura/escritura CSV con DictReader/DictWriter      |
+| Interacción por consola   | ✅              | Menú textual, inputs, mensajes claros                |
+| Documentación clara       | ✅              | Comentarios pedagógicos en cada línea                |
+| Diagramas de flujo        | ✅              | draw.io incluidos para visualizar la lógica          |
+| Buenas prácticas          | ✅              | Nombres claros, modularidad, separación de lógica    |
+
+---
+
+## 🚀 ¿Cómo ejecutar el proyecto?
+
+1. Asegúrate de tener **Python 3 instalado**.
+2. Descarga el archivo `crud_personas.txt` y cambia su extensión a `.py` si lo deseas.
+3. Abre tu terminal y ejecuta:
+
+```bash
+python crud_personas.py

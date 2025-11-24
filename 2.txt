@@ -1,0 +1,202 @@
+# ------------------------------------------------------------
+# CRUD de Estudiantes con Lista de Diccionarios + CSV + Stats
+# ------------------------------------------------------------
+# Qué hace:
+# - Gestiona estudiantes: id, nombre, nota (0 a 5).
+# - Trabaja en memoria (lista de diccionarios) y persiste en CSV.
+# - Incluye validaciones detalladas y estadísticas (promedio, mejor/peor).
+# ------------------------------------------------------------
+
+import csv   # Para trabajar con CSV
+import os    # Para verificar existencia de archivo
+
+# Colores
+ROJO = "\033[91m"
+VERDE = "\033[92m"
+AMARILLO = "\033[93m"
+RESET = "\033[0m"
+
+ARCHIVO = "estudiantes.csv"            # Nombre del CSV
+CAMPOS = ["id", "nombre", "nota"]      # Encabezados del CSV
+
+# ------------------ Validaciones ------------------
+def id_valido(n):
+    """True si n es entero positivo."""
+    return isinstance(n, int) and n > 0
+
+def nombre_valido(s):
+    """True si s es string y no está vacío al hacer strip()."""
+    return isinstance(s, str) and bool(s.strip())
+
+def nota_valida(n):
+    """True si n es número (int/float) entre 0 y 5."""
+    return isinstance(n, (int, float)) and (0 <= n <= 5)
+
+# ------------------ CSV helpers ------------------
+def cargar_csv():
+    """
+    Lee el archivo CSV si existe y devuelve lista de estudiantes:
+    Cada estudiante: {"id": int, "nombre": str, "nota": float}
+    """
+    lista = []
+    if not os.path.exists(ARCHIVO):
+        return lista
+    with open(ARCHIVO, "r", encoding="utf-8") as f:
+        lector = csv.DictReader(f)
+        for fila in lector:
+            try:
+                pid = int(fila["id"])
+                nombre = fila["nombre"]
+                nota = float(fila["nota"])
+            except (KeyError, ValueError):
+                print(AMARILLO + "⚠️ Fila inválida en CSV omitida." + RESET)
+                continue
+            lista.append({"id": pid, "nombre": nombre, "nota": nota})
+    return lista
+
+def guardar_csv(lista):
+    """Reescribe el CSV con toda la lista de estudiantes."""
+    with open(ARCHIVO, "w", newline="", encoding="utf-8") as f:
+        escritor = csv.DictWriter(f, fieldnames=CAMPOS)
+        escritor.writeheader()
+        for e in lista:
+            escritor.writerow({"id": e["id"], "nombre": e["nombre"], "nota": e["nota"]})
+
+# ------------------ CRUD ------------------
+def crear_estudiante(lista, id, nombre, nota):
+    """Crea estudiante si pasa validaciones y no está duplicado por ID."""
+    if not id_valido(id):
+        print(ROJO + "❌ ID inválido." + RESET)
+        return False
+    if any(e["id"] == id for e in lista):  # Busca duplicados recorriendo la lista
+        print(ROJO + f"❌ ID {id} ya existe." + RESET)
+        return False
+    if not nombre_valido(nombre):
+        print(ROJO + "❌ Nombre inválido." + RESET)
+        return False
+    if not nota_valida(nota):
+        print(ROJO + "❌ Nota inválida (0-5)." + RESET)
+        return False
+
+    lista.append({"id": id, "nombre": nombre.strip(), "nota": float(nota)})
+    print(VERDE + "✅ Estudiante creado." + RESET)
+    return True
+
+def listar_estudiantes(lista):
+    """Imprime todos los estudiantes; si no hay, avisa."""
+    if not lista:
+        print(AMARILLO + "⚠️ No hay estudiantes." + RESET)
+        return
+    print("📘 Estudiantes:")
+    for e in lista:
+        print(f"- ID={e['id']} | Nombre={e['nombre']} | Nota={e['nota']:.2f}")
+
+def actualizar_nota(lista, id, nueva_nota):
+    """Actualiza la nota si el estudiante existe y la nota es válida."""
+    if not nota_valida(nueva_nota):
+        print(ROJO + "❌ Nota inválida (0-5)." + RESET)
+        return False
+    for e in lista:
+        if e["id"] == id:
+            e["nota"] = float(nueva_nota)
+            print(VERDE + "✏️ Nota actualizada." + RESET)
+            return True
+    print(ROJO + f"❌ No existe estudiante con ID {id}." + RESET)
+    return False
+
+def eliminar_estudiante(lista, id):
+    """Elimina el estudiante si existe."""
+    for e in lista:
+        if e["id"] == id:
+            lista.remove(e)
+            print(VERDE + "🗑️ Estudiante eliminado." + RESET)
+            return True
+    print(ROJO + f"❌ No existe estudiante con ID {id}." + RESET)
+    return False
+
+# ------------------ Estadísticas ------------------
+def promedio(lista):
+    """Calcula e imprime el promedio de notas."""
+    if not lista:
+        print(AMARILLO + "⚠️ No hay estudiantes para calcular promedio." + RESET)
+        return None
+    suma = 0.0
+    for e in lista:
+        suma += e["nota"]
+    prom = suma / len(lista)
+    print(f"📊 Promedio: {prom:.2f}")
+    return prom
+
+def mejor_y_peor(lista):
+    """Encuentra la mejor y peor nota recorriendo la lista."""
+    if not lista:
+        print(AMARILLO + "⚠️ No hay estudiantes." + RESET)
+        return None, None
+    mejor = lista[0]
+    peor = lista[0]
+    for e in lista:
+        if e["nota"] > mejor["nota"]:
+            mejor = e
+        if e["nota"] < peor["nota"]:
+            peor = e
+    print(f"🏆 Mejor: {mejor['nombre']} ({mejor['nota']}) | 🪫 Peor: {peor['nombre']} ({peor['nota']})")
+    return mejor, peor
+
+# ------------------ Menú ------------------
+def menu():
+    estudiantes = cargar_csv()
+    while True:
+        print("\n===== MENÚ ESTUDIANTES =====")
+        print("1. Crear estudiante")
+        print("2. Listar estudiantes")
+        print("3. Actualizar nota")
+        print("4. Eliminar estudiante")
+        print("5. Promedio y mejor/peor")
+        print("6. Salir")
+        op = input("Elige (1-6): ").strip()
+
+        if op == "1":
+            try:
+                id = int(input("ID: ").strip())
+                nombre = input("Nombre: ").strip()
+                nota = float(input("Nota (0-5): ").strip())
+            except ValueError:
+                print(ROJO + "❌ ID debe ser entero y Nota numérica." + RESET)
+                continue
+            if crear_estudiante(estudiantes, id, nombre, nota):
+                guardar_csv(estudiantes)
+
+        elif op == "2":
+            listar_estudiantes(estudiantes)
+
+        elif op == "3":
+            try:
+                id = int(input("ID del estudiante: ").strip())
+                nueva_nota = float(input("Nueva nota (0-5): ").strip())
+            except ValueError:
+                print(ROJO + "❌ ID entero y Nota numérica." + RESET)
+                continue
+            if actualizar_nota(estudiantes, id, nueva_nota):
+                guardar_csv(estudiantes)
+
+        elif op == "4":
+            try:
+                id = int(input("ID del estudiante a eliminar: ").strip())
+            except ValueError:
+                print(ROJO + "❌ ID entero." + RESET)
+                continue
+            if eliminar_estudiante(estudiantes, id):
+                guardar_csv(estudiantes)
+
+        elif op == "5":
+            promedio(estudiantes)
+            mejor_y_peor(estudiantes)
+
+        elif op == "6":
+            print(VERDE + "👋 Adiós." + RESET)
+            break
+        else:
+            print(AMARILLO + "⚠️ Opción inválida." + RESET)
+
+if __name__ == "__main__":
+    menu()

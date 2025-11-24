@@ -1,0 +1,50 @@
+# ------------------------------------------------------------
+# CRUD de Estudiantes con Lista de Diccionarios
+# ------------------------------------------------------------
+estudiantes = [
+    {"id": 1, "nombre": "Carlos", "nota": 4.5},
+    {"id": 2, "nombre": "Ana", "nota": 3.8}
+]
+
+def crear_estudiante(lista, id, nombre, nota):
+    if any(e["id"] == id for e in lista):
+        print("❌ ID duplicado.")
+        return
+    if not nombre.strip():
+        print("❌ Nombre inválido.")
+        return
+    if not (0 <= nota <= 5):
+        print("❌ Nota inválida (0-5).")
+        return
+    lista.append({"id": id, "nombre": nombre.strip(), "nota": nota})
+    print("✅ Estudiante creado.")
+
+def leer_estudiantes(lista):
+    for e in lista:
+        print(f"ID={e['id']} | {e['nombre']} | Nota={e['nota']}")
+
+def actualizar_estudiante(lista, id, nueva_nota):
+    for e in lista:
+        if e["id"] == id:
+            if not (0 <= nueva_nota <= 5):
+                print("❌ Nota inválida.")
+                return
+            e["nota"] = nueva_nota
+            print("✏️ Estudiante actualizado.")
+            return
+    print("❌ Estudiante no encontrado.")
+
+def eliminar_estudiante(lista, id):
+    for e in lista:
+        if e["id"] == id:
+            lista.remove(e)
+            print("🗑️ Estudiante eliminado.")
+            return
+    print("❌ Estudiante no encontrado.")
+
+# DEMO
+leer_estudiantes(estudiantes)
+crear_estudiante(estudiantes, 3, "Luis", 4.0)
+actualizar_estudiante(estudiantes, 2, 4.2)
+eliminar_estudiante(estudiantes, 1)
+leer_estudiantes(estudiantes)

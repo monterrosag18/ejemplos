@@ -1,0 +1,168 @@
+# ------------------------------------------------------------
+# CRUD de Inventario con Diccionario en Memoria + Menú CLI
+# ------------------------------------------------------------
+# Qué hace:
+# - Gestiona productos con ID único, nombre y cantidad.
+# - Trabaja solo en memoria usando un diccionario.
+# - Incluye validaciones y colores ANSI para mensajes.
+# - Menú interactivo por consola (CLI).
+# ------------------------------------------------------------
+
+# Colores ANSI para darle vida a la consola:
+ROJO = "\033[91m"      # Usado para errores
+VERDE = "\033[92m"     # Usado para éxitos
+AMARILLO = "\033[93m"  # Usado para advertencias
+AZUL = "\033[94m"      # Usado para información
+RESET = "\033[0m"      # Reset del color al final del texto
+
+# Estructura de datos principal:
+# - Clave (key): id (entero único)
+# - Valor (value): diccionario con nombre y cantidad
+inventario = {
+    1: {"nombre": "Laptop", "cantidad": 10},
+    2: {"nombre": "Mouse", "cantidad": 50},
+    3: {"nombre": "Teclado", "cantidad": 30}
+}
+
+# ------------------ Validaciones ------------------
+def es_entero_positivo(n):
+    """Devuelve True si n es int y mayor que 0. Útil para IDs."""
+    return isinstance(n, int) and n > 0
+
+def es_entero_no_negativo(n):
+    """Devuelve True si n es int y mayor o igual que 0. Útil para cantidades."""
+    return isinstance(n, int) and n >= 0
+
+def texto_valido(s):
+    """Devuelve True si s es str y no está vacío al hacer strip()."""
+    return isinstance(s, str) and bool(s.strip())
+
+# ------------------ CRUD ------------------
+def crear_producto(dic, id, nombre, cantidad):
+    """
+    Crea un producto si pasa todas las validaciones:
+    - ID entero positivo y no repetido.
+    - Nombre de texto válido.
+    - Cantidad entero no negativo.
+    """
+    if not es_entero_positivo(id):
+        print(ROJO + "❌ ID inválido (entero positivo)." + RESET)
+        return
+    if id in dic:
+        print(ROJO + f"❌ El ID {id} ya existe." + RESET)
+        return
+    if not texto_valido(nombre):
+        print(ROJO + "❌ Nombre inválido (texto no vacío)." + RESET)
+        return
+    if not es_entero_no_negativo(cantidad):
+        print(ROJO + "❌ Cantidad inválida (entero no negativo)." + RESET)
+        return
+
+    dic[id] = {"nombre": nombre.strip(), "cantidad": cantidad}
+    print(VERDE + f"✅ Producto creado: {dic[id]}" + RESET)
+
+def listar_productos(dic):
+    """Muestra todos los productos. Si está vacío, avisa."""
+    if not dic:
+        print(AMARILLO + "⚠️ Inventario vacío." + RESET)
+        return
+    print(AZUL + "📦 Inventario actual:" + RESET)
+    # Recorremos el diccionario con for mostrando clave y valor
+    for pid, datos in dic.items():
+        print(f"- ID={pid} | Nombre={datos['nombre']} | Cantidad={datos['cantidad']}")
+
+def actualizar_producto(dic, id, nuevo_nombre=None, nueva_cantidad=None):
+    """
+    Actualiza nombre y/o cantidad de un producto:
+    - Verifica que el ID exista.
+    - Valida nombre y cantidad si se proporcionan.
+    """
+    if id not in dic:
+        print(ROJO + f"❌ No existe producto con ID {id}." + RESET)
+        return
+    if nuevo_nombre is not None:
+        if not texto_valido(nuevo_nombre):
+            print(ROJO + "❌ Nombre inválido." + RESET)
+            return
+        dic[id]["nombre"] = nuevo_nombre.strip()
+    if nueva_cantidad is not None:
+        if not es_entero_no_negativo(nueva_cantidad):
+            print(ROJO + "❌ Cantidad inválida." + RESET)
+            return
+        dic[id]["cantidad"] = nueva_cantidad
+    print(VERDE + f"✏️ Producto actualizado: {dic[id]}" + RESET)
+
+def eliminar_producto(dic, id):
+    """Elimina el producto si existe; si no, avisa."""
+    if id not in dic:
+        print(ROJO + f"❌ No existe producto con ID {id}." + RESET)
+        return
+    del dic[id]
+    print(VERDE + f"🗑️ Producto ID={id} eliminado." + RESET)
+
+# ------------------ Menú CLI ------------------
+def menu():
+    """
+    Menú principal:
+    - Permite seleccionar operaciones CRUD.
+    - Convierte inputs a tipos correctos y valida.
+    """
+    while True:
+        print("\n===== MENÚ INVENTARIO =====")
+        print("1. Crear producto")
+        print("2. Listar productos")
+        print("3. Actualizar producto")
+        print("4. Eliminar producto")
+        print("5. Salir")
+        opcion = input("Elige una opción (1-5): ").strip()
+
+        if opcion == "1":
+            try:
+                id = int(input("ID (entero positivo): ").strip())
+                nombre = input("Nombre: ").strip()
+                cantidad = int(input("Cantidad (entero no negativo): ").strip())
+            except ValueError:
+                print(ROJO + "❌ ID y Cantidad deben ser enteros." + RESET)
+                continue
+            crear_producto(inventario, id, nombre, cantidad)
+
+        elif opcion == "2":
+            listar_productos(inventario)
+
+        elif opcion == "3":
+            try:
+                id = int(input("ID del producto a actualizar: ").strip())
+            except ValueError:
+                print(ROJO + "❌ ID debe ser entero." + RESET)
+                continue
+            nuevo_nombre = input("Nuevo nombre (vacío = no cambiar): ").strip()
+            nueva_cantidad_txt = input("Nueva cantidad (vacío = no cambiar): ").strip()
+            # Interpretar vacío como no cambiar
+            nuevo_nombre = nuevo_nombre if nuevo_nombre else None
+            nueva_cantidad = None
+            if nueva_cantidad_txt:
+                try:
+                    nueva_cantidad = int(nueva_cantidad_txt)
+                except ValueError:
+                    print(ROJO + "❌ Cantidad debe ser entero." + RESET)
+                    continue
+            actualizar_producto(inventario, id, nuevo_nombre, nueva_cantidad)
+
+        elif opcion == "4":
+            try:
+                id = int(input("ID del producto a eliminar: ").strip())
+            except ValueError:
+                print(ROJO + "❌ ID debe ser entero." + RESET)
+                continue
+            eliminar_producto(inventario, id)
+
+        elif opcion == "5":
+            print(VERDE + "👋 Saliendo del sistema. ¡Buen trabajo!" + RESET)
+            break
+
+        else:
+            print(AMARILLO + "⚠️ Opción inválida. Elige del 1 al 5." + RESET)
+
+# Punto de entrada: ejecuta el menú si el archivo se corre directamente.
+if __name__ == "__main__":
+    menu()

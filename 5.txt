@@ -1,0 +1,71 @@
+# ------------------------------------------------------------
+# CRUD simulado con Tuplas (inmutables) mediante conversión
+# ------------------------------------------------------------
+# Qué hace:
+# - Representa registros como tuplas: (id, nombre, edad).
+# - Para actualizar/eliminar: convierte a lista, modifica, y vuelve a tupla.
+# ------------------------------------------------------------
+
+# Tupla inicial con tres personas
+personas = (
+    (1, "Carlos", 25),
+    (2, "Ana", 30),
+    (3, "Luis", 28),
+)
+
+def listar(tup):
+    """Recorre la tupla y muestra registros."""
+    if not tup:
+        print("⚠️ Tupla vacía."); return
+    for pid, nombre, edad in tup:
+        print(f"- ID={pid} | Nombre={nombre} | Edad={edad}")
+
+def crear(tup, id, nombre, edad):
+    """
+    Agrega un registro al final:
+    - Valida que ID no esté repetido.
+    - Devuelve nueva tupla.
+    """
+    # Revisar duplicado: recorremos tupla buscando ID
+    for pid, _, _ in tup:
+        if pid == id:
+            print("❌ ID duplicado."); return tup
+    # Construimos nueva tupla sumando al final
+    nuevo = tup + ((id, nombre.strip(), edad),)
+    print("✅ Persona creada.")
+    return nuevo
+
+def actualizar(tup, id, nuevo_nombre=None, nueva_edad=None):
+    """Modifica un registro por ID: retorna tupla nueva."""
+    mutable = list(tup)  # Convertimos a lista para poder asignar
+    cambiada = False
+    for i, (pid, nombre, edad) in enumerate(mutable):
+        if pid == id:
+            if nuevo_nombre is not None:
+                nombre = nuevo_nombre.strip()
+            if nueva_edad is not None:
+                edad = nueva_edad
+            mutable[i] = (pid, nombre, edad)
+            cambiada = True
+            break
+    if not cambiada:
+        print("❌ ID no encontrado."); return tup
+    print("✏️ Persona actualizada.")
+    return tuple(mutable)
+
+def eliminar(tup, id):
+    """Elimina registro por ID: retorna tupla nueva."""
+    nueva = tuple(p for p in tup if p[0] != id)
+    if len(nueva) == len(tup):
+        print("❌ ID no encontrado."); return tup
+    print("🗑️ Persona eliminada.")
+    return nueva
+
+# DEMO
+listar(personas)
+personas = crear(personas, 4, "Marta", 22)
+listar(personas)
+personas = actualizar(personas, 2, nuevo_nombre="Andrea", nueva_edad=31)
+listar(personas)
+personas = eliminar(personas, 3)
+listar(personas)

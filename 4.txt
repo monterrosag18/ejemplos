@@ -1,0 +1,197 @@
+# ------------------------------------------------------------
+# CRUD de Tareas usando JSON + filtros por estado y fecha
+# ------------------------------------------------------------
+# Qué hace:
+# - Guarda tareas en archivo JSON (persistencia).
+# - Cada tarea: id (int), titulo (str), estado (str), fecha (str YYYY-MM-DD).
+# - Filtra tareas por estado y por rango de fecha.
+# ------------------------------------------------------------
+
+import json   # Para trabajar con archivos JSON
+import os     # Para verificar si el archivo existe
+from datetime import datetime  # Para validar formato de fechas
+
+ROJO = "\033[91m"; VERDE = "\033[92m"; AMARILLO = "\033[93m"; RESET = "\033[0m"
+
+ARCHIVO = "tareas.json"
+
+# ------------------ Helpers JSON ------------------
+def leer_json():
+    """Devuelve lista de tareas leyendo el archivo JSON; si no existe, lista vacía."""
+    if not os.path.exists(ARCHIVO):
+        return []
+    with open(ARCHIVO, "r", encoding="utf-8") as f:
+        try:
+            return json.load(f)
+        except json.JSONDecodeError:
+            print(AMARILLO + "⚠️ JSON corrupto, se devolverá lista vacía." + RESET)
+            return []
+
+def guardar_json(lista):
+    """Guarda la lista completa en el archivo JSON."""
+    with open(ARCHIVO, "w", encoding="utf-8") as f:
+        json.dump(lista, f, ensure_ascii=False, indent=2)
+
+# ------------------ Validaciones ------------------
+def id_valido(n): return isinstance(n, int) and n > 0
+def texto_valido(s): return isinstance(s, str) and bool(s.strip())
+def estado_valido(s): return s in {"pendiente", "en_progreso", "finalizada"}
+
+def fecha_valida(fecha_str):
+    """True si fecha_str cumple formato YYYY-MM-DD."""
+    try:
+        datetime.strptime(fecha_str, "%Y-%m-%d")
+        return True
+    except ValueError:
+        return False
+
+# ------------------ CRUD ------------------
+def crear_tarea(id, titulo, estado, fecha):
+    """Crea una tarea con validaciones y evita IDs duplicados."""
+    if not id_valido(id): print(ROJO + "❌ ID inválido." + RESET); return
+    if not texto_valido(titulo): print(ROJO + "❌ Título inválido." + RESET); return
+    if not estado_valido(estado): print(ROJO + "❌ Estado inválido." + RESET); return
+    if not fecha_valida(fecha): print(ROJO + "❌ Fecha inválida (YYYY-MM-DD)." + RESET); return
+
+    tareas = leer_json()
+    if any(t["id"] == id for t in tareas):
+        print(ROJO + f"❌ El ID {id} ya existe." + RESET); return
+
+    tareas.append({"id": id, "titulo": titulo.strip(), "estado": estado, "fecha": fecha})
+    guardar_json(tareas)
+    print(VERDE + "✅ Tarea creada." + RESET)
+
+def listar_tareas():
+    """Imprime todas las tareas."""
+    tareas = leer_json()
+    if not tareas:
+        print(AMARILLO + "⚠️ No hay tareas." + RESET); return
+    print("🗒️ Tareas:")
+    for t in tareas:
+        print(f"- ID={t['id']} | {t['titulo']} | Estado={t['estado']} | Fecha={t['fecha']}")
+
+def actualizar_tarea(id, nuevo_titulo=None, nuevo_estado=None, nueva_fecha=None):
+    """Actualiza campo(s) de una tarea si existe y los datos son válidos."""
+    tareas = leer_json()
+    encontrado = False
+    for t in tareas:
+        if t["id"] == id:
+            encontrado = True
+            if nuevo_titulo is not None:
+                if not texto_valido(nuevo_titulo): print(ROJO + "❌ Título inválido." + RESET); return
+                t["titulo"] = nuevo_titulo.strip()
+            if nuevo_estado is not None:
+                if not estado_valido(nuevo_estado): print(ROJO + "❌ Estado inválido." + RESET); return
+                t["estado"] = nuevo_estado
+            if nueva_fecha is not None:
+                if not fecha_valida(nueva_fecha): print(ROJO + "❌ Fecha inválida." + RESET); return
+                t["fecha"] = nueva_fecha
+            break
+    if not encontrado:
+        print(ROJO + f"❌ No existe tarea con ID {id}." + RESET); return
+    guardar_json(tareas)
+    print(VERDE + "✏️ Tarea actualizada." + RESET)
+
+def eliminar_tarea(id):
+    """Elimina la tarea por ID si existe."""
+    tareas = leer_json()
+    antes = len(tareas)
+    tareas = [t for t in tareas if t["id"] != id]
+    if len(tareas) == antes:
+        print(ROJO + f"❌ No existe tarea con ID {id}." + RESET); return
+    guardar_json(tareas)
+    print(VERDE + "🗑️ Tarea eliminada." + RESET)
+
+# ------------------ Filtros ------------------
+def filtrar_por_estado(estado):
+    """Muestra tareas con un estado específico."""
+    if not estado_valido(estado): print(ROJO + "❌ Estado inválido." + RESET); return
+    tareas = [t for t in leer_json() if t["estado"] == estado]
+    if not tareas:
+        print(AMARILLO + "⚠️ No hay tareas con ese estado." + RESET); return
+    for t in tareas:
+        print(f"- {t['titulo']} ({t['estado']}) | Fecha={t['fecha']}")
+
+def filtrar_por_rango_fecha(inicio, fin):
+    """Muestra tareas cuya fecha esté entre inicio y fin (YYYY-MM-DD)."""
+    if not (fecha_valida(inicio) and fecha_valida(fin)):
+        print(ROJO + "❌ Fechas inválidas (YYYY-MM-DD)." + RESET); return
+    i = datetime.strptime(inicio, "%Y-%m-%d")
+    f = datetime.strptime(fin, "%Y-%m-%d")
+    resultados = []
+    for t in leer_json():
+        try:
+            ft = datetime.strptime(t["fecha"], "%Y-%m-%d")
+            if i <= ft <= f:
+                resultados.append(t)
+        except ValueError:
+            print(AMARILLO + f"⚠️ Fecha inválida en tarea ID={t['id']}." + RESET)
+    if not resultados:
+        print(AMARILLO + "⚠️ No hay tareas en ese rango." + RESET); return
+    for r in resultados:
+        print(f"- {r['titulo']} | {r['estado']} | {r['fecha']}")
+
+# ------------------ Menú ------------------
+def menu():
+    while True:
+        print("\n===== MENÚ TAREAS =====")
+        print("1. Crear tarea")
+        print("2. Listar tareas")
+        print("3. Actualizar tarea")
+        print("4. Eliminar tarea")
+        print("5. Filtrar por estado")
+        print("6. Filtrar por rango de fecha")
+        print("7. Salir")
+        op = input("Elige (1-7): ").strip()
+
+        if op == "1":
+            try:
+                id = int(input("ID: ").strip())
+            except ValueError:
+                print(ROJO + "❌ ID debe ser entero." + RESET); continue
+            titulo = input("Título: ").strip()
+            estado = input("Estado (pendiente/en_progreso/finalizada): ").strip()
+            fecha = input("Fecha (YYYY-MM-DD): ").strip()
+            crear_tarea(id, titulo, estado, fecha)
+
+        elif op == "2":
+            listar_tareas()
+
+        elif op == "3":
+            try:
+                id = int(input("ID de la tarea: ").strip())
+            except ValueError:
+                print(ROJO + "❌ ID entero." + RESET); continue
+            nt = input("Nuevo título (vacío = no cambiar): ").strip()
+            ne = input("Nuevo estado (vacío = no cambiar): ").strip()
+            nf = input("Nueva fecha (YYYY-MM-DD, vacío = no cambiar): ").strip()
+            actualizar_tarea(
+                id,
+                nt if nt else None,
+                ne if ne else None,
+                nf if nf else None
+            )
+
+        elif op == "4":
+            try:
+                id = int(input("ID de la tarea a eliminar: ").strip())
+            except ValueError:
+                print(ROJO + "❌ ID entero." + RESET); continue
+            eliminar_tarea(id)
+
+        elif op == "5":
+            estado = input("Estado: ").strip()
+            filtrar_por_estado(estado)
+
+        elif op == "6":
+            inicio = input("Fecha inicio (YYYY-MM-DD): ").strip()
+            fin = input("Fecha fin (YYYY-MM-DD): ").strip()
+            filtrar_por_rango_fecha(inicio, fin)
+
+        elif op == "7":
+            print(VERDE + "👋 Saliendo." + RESET); break
+        else:
+            print(AMARILLO + "⚠️ Opción inválida." + RESET)
+
+if __name__ == "__main__":
+    menu()

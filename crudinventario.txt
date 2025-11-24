@@ -1,0 +1,66 @@
+# ------------------------------------------------------------
+# CRUD de Inventario con Diccionarios
+# ------------------------------------------------------------
+# Cada producto se guarda con un ID único como clave.
+# El valor es un diccionario con nombre y cantidad.
+# ------------------------------------------------------------
+
+inventario = {
+    1: {"nombre": "Laptop", "cantidad": 10},
+    2: {"nombre": "Mouse", "cantidad": 50},
+    3: {"nombre": "Teclado", "cantidad": 30}
+}
+
+def crear_producto(dic, id, nombre, cantidad):
+    """
+    Crea un producto nuevo en el inventario.
+    Validaciones:
+    - ID único y entero positivo.
+    - Nombre no vacío.
+    - Cantidad entero positivo.
+    """
+    if id in dic:
+        print("❌ ID duplicado.")
+        return
+    if not isinstance(nombre, str) or not nombre.strip():
+        print("❌ Nombre inválido.")
+        return
+    if not isinstance(cantidad, int) or cantidad < 0:
+        print("❌ Cantidad inválida.")
+        return
+    dic[id] = {"nombre": nombre.strip(), "cantidad": cantidad}
+    print(f"✅ Producto creado: {dic[id]}")
+
+def leer_inventario(dic):
+    """Muestra todos los productos."""
+    for id, datos in dic.items():
+        print(f"ID={id} | {datos['nombre']} | Cantidad={datos['cantidad']}")
+
+def actualizar_producto(dic, id, nuevo_nombre=None, nueva_cantidad=None):
+    """Actualiza nombre y/o cantidad de un producto existente."""
+    if id not in dic:
+        print("❌ Producto no encontrado.")
+        return
+    if nuevo_nombre:
+        dic[id]["nombre"] = nuevo_nombre.strip()
+    if nueva_cantidad is not None:
+        if nueva_cantidad < 0:
+            print("❌ Cantidad inválida.")
+            return
+        dic[id]["cantidad"] = nueva_cantidad
+    print(f"✏️ Producto actualizado: {dic[id]}")
+
+def eliminar_producto(dic, id):
+    """Elimina un producto por ID."""
+    if id not in dic:
+        print("❌ Producto no encontrado.")
+        return
+    del dic[id]
+    print(f"🗑️ Producto con ID={id} eliminado.")
+
+# DEMO
+leer_inventario(inventario)
+crear_producto(inventario, 4, "Monitor", 15)
+actualizar_producto(inventario, 2, nueva_cantidad=60)
+eliminar_producto(inventario, 3)
+leer_inventario(inventario)

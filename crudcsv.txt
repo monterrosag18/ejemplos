@@ -1,0 +1,28 @@
+import csv
+
+ARCHIVO = "inventario.csv"
+CAMPOS = ["id", "nombre", "cantidad"]
+
+def crear_csv():
+    with open(ARCHIVO, "w", newline="", encoding="utf-8") as f:
+        escritor = csv.DictWriter(f, fieldnames=CAMPOS)
+        escritor.writeheader()
+        escritor.writerow({"id": 1, "nombre": "Laptop", "cantidad": 10})
+        escritor.writerow({"id": 2, "nombre": "Mouse", "cantidad": 50})
+
+def leer_csv():
+    with open(ARCHIVO, "r", encoding="utf-8") as f:
+        lector = csv.DictReader(f)
+        for fila in lector:
+            print(fila)
+
+def agregar_producto(id, nombre, cantidad):
+    with open(ARCHIVO, "a", newline="", encoding="utf-8") as f:
+        escritor = csv.DictWriter(f, fieldnames=CAMPOS)
+        escritor.writerow({"id": id, "nombre": nombre, "cantidad": cantidad})
+
+# DEMO
+crear_csv()
+leer_csv()
+agregar_producto(3, "Teclado", 30)
+leer_csv()

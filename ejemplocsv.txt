@@ -1,0 +1,202 @@
+# ------------------------------------------------------------
+# Importamos librerías necesarias
+# ------------------------------------------------------------
+import csv   # Para leer y escribir archivos CSV
+import os    # Para comprobar existencia y eliminar archivos
+
+# ------------------------------------------------------------
+# FUNCIÓN: Crear un archivo CSV con datos iniciales
+# ------------------------------------------------------------
+def crear_csv(nombre_archivo):
+    """
+    Crea un archivo CSV nuevo con encabezados y datos iniciales.
+    Validación: si el archivo ya existe, no lo sobrescribe automáticamente.
+    """
+    if os.path.exists(nombre_archivo):
+        print(f"⚠️ El archivo '{nombre_archivo}' ya existe. No se creó uno nuevo.")
+        return
+
+    with open(nombre_archivo, mode="w", newline="", encoding="utf-8") as archivo:
+        escritor = csv.writer(archivo)
+        escritor.writerow(["id", "nombre", "edad"])  # Encabezados
+        escritor.writerow([1, "Carlos", 25])
+        escritor.writerow([2, "Ana", 30])
+        escritor.writerow([3, "Luis", 28])
+    print(f"✅ Archivo '{nombre_archivo}' creado con datos iniciales.")
+
+
+# ------------------------------------------------------------
+# FUNCIÓN: Agregar un nuevo registro
+# ------------------------------------------------------------
+def agregar_registro(nombre_archivo, id, nombre, edad):
+    """
+    Añade un nuevo registro al CSV.
+    Validaciones:
+    - El archivo debe existir.
+    - El ID no debe estar repetido.
+    - La edad debe ser un número entero positivo.
+    """
+    if not os.path.exists(nombre_archivo):
+        print("❌ No se puede agregar registro: el archivo no existe.")
+        return
+
+    # Validación de edad
+    if not isinstance(edad, int) or edad <= 0:
+        print("❌ Edad inválida. Debe ser un número entero positivo.")
+        return
+
+    # Leer registros existentes para validar ID
+    with open(nombre_archivo, mode="r", encoding="utf-8") as archivo:
+        lector = csv.reader(archivo)
+        filas = list(lector)
+
+    # Comprobar si el ID ya existe
+    for fila in filas[1:]:  # Saltamos encabezados
+        if fila[0] == str(id):
+            print(f"❌ El ID {id} ya existe. No se agregó el registro.")
+            return
+
+    # Si pasa validaciones, agregamos el registro
+    with open(nombre_archivo, mode="a", newline="", encoding="utf-8") as archivo:
+        escritor = csv.writer(archivo)
+        escritor.writerow([id, nombre, edad])
+    print(f"➕ Registro agregado: {id}, {nombre}, {edad}")
+
+
+# ------------------------------------------------------------
+# FUNCIÓN: Leer archivo CSV
+# ------------------------------------------------------------
+def leer_csv(nombre_archivo):
+    """
+    Muestra el contenido del archivo CSV.
+    Validación: el archivo debe existir y no estar vacío.
+    """
+    if not os.path.exists(nombre_archivo):
+        print("❌ No se puede leer: el archivo no existe.")
+        return
+
+    with open(nombre_archivo, mode="r", encoding="utf-8") as archivo:
+        lector = csv.reader(archivo)
+        filas = list(lector)
+
+        if len(filas) == 0:
+            print("⚠️ El archivo está vacío.")
+            return
+
+        for fila in filas:
+            print(fila)
+
+
+# ------------------------------------------------------------
+# FUNCIÓN: Actualizar registro
+# ------------------------------------------------------------
+def actualizar_registro(nombre_archivo, id_objetivo, nuevo_nombre, nueva_edad):
+    """
+    Actualiza un registro existente.
+    Validaciones:
+    - El archivo debe existir.
+    - El ID debe estar presente.
+    - La nueva edad debe ser válida.
+    """
+    if not os.path.exists(nombre_archivo):
+        print("❌ No se puede actualizar: el archivo no existe.")
+        return
+
+    if not isinstance(nueva_edad, int) or nueva_edad <= 0:
+        print("❌ Edad inválida. Debe ser un número entero positivo.")
+        return
+
+    with open(nombre_archivo, mode="r", encoding="utf-8") as archivo:
+        lector = csv.reader(archivo)
+        filas = list(lector)
+
+    encontrado = False
+    for fila in filas:
+        if fila[0] == str(id_objetivo):
+            fila[1] = nuevo_nombre
+            fila[2] = str(nueva_edad)
+            encontrado = True
+
+    if not encontrado:
+        print(f"❌ No se encontró un registro con id={id_objetivo}.")
+        return
+
+    with open(nombre_archivo, mode="w", newline="", encoding="utf-8") as archivo:
+        escritor = csv.writer(archivo)
+        escritor.writerows(filas)
+
+    print(f"✏️ Registro con id={id_objetivo} actualizado a: {nuevo_nombre}, {nueva_edad}")
+
+
+# ------------------------------------------------------------
+# FUNCIÓN: Eliminar registro
+# ------------------------------------------------------------
+def eliminar_registro(nombre_archivo, id_objetivo):
+    """
+    Elimina un registro por ID.
+    Validaciones:
+    - El archivo debe existir.
+    - El ID debe estar presente.
+    """
+    if not os.path.exists(nombre_archivo):
+        print("❌ No se puede eliminar: el archivo no existe.")
+        return
+
+    with open(nombre_archivo, mode="r", encoding="utf-8") as archivo:
+        lector = csv.reader(archivo)
+        filas = list(lector)
+
+    nuevas_filas = [fila for fila in filas if fila[0] != str(id_objetivo)]
+
+    if len(nuevas_filas) == len(filas):
+        print(f"❌ No se encontró un registro con id={id_objetivo}.")
+        return
+
+    with open(nombre_archivo, mode="w", newline="", encoding="utf-8") as archivo:
+        escritor = csv.writer(archivo)
+        escritor.writerows(nuevas_filas)
+
+    print(f"🗑️ Registro con id={id_objetivo} eliminado.")
+
+
+# ------------------------------------------------------------
+# FUNCIÓN: Eliminar archivo completo
+# ------------------------------------------------------------
+def eliminar_archivo(nombre_archivo):
+    """
+    Elimina el archivo CSV completo.
+    Validación: el archivo debe existir.
+    """
+    if os.path.exists(nombre_archivo):
+        os.remove(nombre_archivo)
+        print(f"🗑️ Archivo '{nombre_archivo}' eliminado.")
+    else:
+        print("❌ No se puede eliminar: el archivo no existe.")
+
+
+# ------------------------------------------------------------
+# DEMO DEL CRUD CON VALIDACIONES
+# ------------------------------------------------------------
+nombre = "personas.csv"
+
+crear_csv(nombre)                     # Crear archivo inicial
+agregar_registro(nombre, 4, "Marta", 22)  # Agregar registro válido
+agregar_registro(nombre, 2, "Pedro", 40)  # Intento con ID duplicado
+agregar_registro(nombre, 5, "Juan", -10)  # Intento con edad inválida
+
+print("\n📖 Leyendo archivo:")
+leer_csv(nombre)
+
+actualizar_registro(nombre, 2, "Andrea", 31)  # Actualizar registro válido
+actualizar_registro(nombre, 99, "X", 20)      # Intento con ID inexistente
+
+print("\n📖 Leyendo archivo tras actualización:")
+leer_csv(nombre)
+
+eliminar_registro(nombre, 3)          # Eliminar registro válido
+eliminar_registro(nombre, 99)         # Intento con ID inexistente
+
+print("\n📖 Leyendo archivo tras eliminación:")
+leer_csv(nombre)
+
+# eliminar_archivo(nombre)            # Eliminar archivo completo (descomenta para probar)

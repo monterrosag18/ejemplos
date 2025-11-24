@@ -1,0 +1,198 @@
+# ------------------------------------------------------------
+# CRUD de Biblioteca usando CSV puro (DictReader/DictWriter)
+# ------------------------------------------------------------
+# Qué hace:
+# - Trabaja directamente contra el archivo CSV sin conservar memoria.
+# - Campos: ISBN (texto único), título, autor, año (entero).
+# - Validaciones completas y búsqueda por título/autor (case-insensitive).
+# ------------------------------------------------------------
+
+import csv
+import os
+
+ROJO = "\033[91m"
+VERDE = "\033[92m"
+AMARILLO = "\033[93m"
+RESET = "\033[0m"
+
+ARCHIVO = "libros.csv"
+CAMPOS = ["isbn", "titulo", "autor", "anio"]
+
+def texto_valido(s):
+    """Texto no vacío."""
+    return isinstance(s, str) and bool(s.strip())
+
+def anio_valido(n):
+    """Año en rango razonable (1000-2100)."""
+    return isinstance(n, int) and 1000 <= n <= 2100
+
+def crear_archivo_si_no_existe():
+    """Crea el CSV con encabezados si no existe."""
+    if not os.path.exists(ARCHIVO):
+        with open(ARCHIVO, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=CAMPOS)
+            w.writeheader()
+
+def leer_todos():
+    """Devuelve lista de libros leyendo el CSV."""
+    crear_archivo_si_no_existe()
+    libros = []
+    with open(ARCHIVO, "r", encoding="utf-8") as f:
+        r = csv.DictReader(f)
+        for fila in r:
+            try:
+                fila["anio"] = int(fila["anio"])
+            except ValueError:
+                print(AMARILLO + "⚠️ Año inválido en CSV; se deja como texto." + RESET)
+            libros.append(fila)
+    return libros
+
+def guardar_todos(libros):
+    """Reescribe el CSV con la lista completa."""
+    with open(ARCHIVO, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=CAMPOS)
+        w.writeheader()
+        for l in libros:
+            w.writerow({
+                "isbn": l["isbn"],
+                "titulo": l["titulo"],
+                "autor": l["autor"],
+                "anio": l["anio"]
+            })
+
+# ------------------ CRUD ------------------
+def crear_libro(isbn, titulo, autor, anio):
+    """Crea un libro si pasa validaciones y no está duplicado por ISBN."""
+    if not texto_valido(isbn):
+        print(ROJO + "❌ ISBN inválido." + RESET); return
+    if not texto_valido(titulo):
+        print(ROJO + "❌ Título inválido." + RESET); return
+    if not texto_valido(autor):
+        print(ROJO + "❌ Autor inválido." + RESET); return
+    if not anio_valido(anio):
+        print(ROJO + "❌ Año inválido (1000-2100)." + RESET); return
+
+    libros = leer_todos()
+    for l in libros:
+        if l["isbn"] == isbn:
+            print(ROJO + f"❌ ISBN {isbn} ya existe." + RESET)
+            return
+
+    libros.append({"isbn": isbn.strip(), "titulo": titulo.strip(), "autor": autor.strip(), "anio": anio})
+    guardar_todos(libros)
+    print(VERDE + "✅ Libro creado." + RESET)
+
+def listar_libros():
+    """Lista todos los libros."""
+    libros = leer_todos()
+    if not libros:
+        print(AMARILLO + "⚠️ No hay libros." + RESET); return
+    print("📚 Biblioteca:")
+    for l in libros:
+        print(f"- ISBN={l['isbn']} | {l['titulo']} | {l['autor']} | Año={l['anio']}")
+
+def actualizar_libro(isbn, nuevo_titulo=None, nuevo_autor=None, nuevo_anio=None):
+    """Actualiza campos de un libro si existe y los datos son válidos."""
+    libros = leer_todos()
+    encontrado = False
+    for l in libros:
+        if l["isbn"] == isbn:
+            encontrado = True
+            if nuevo_titulo is not None:
+                if not texto_valido(nuevo_titulo):
+                    print(ROJO + "❌ Título inválido." + RESET); return
+                l["titulo"] = nuevo_titulo.strip()
+            if nuevo_autor is not None:
+                if not texto_valido(nuevo_autor):
+                    print(ROJO + "❌ Autor inválido." + RESET); return
+                l["autor"] = nuevo_autor.strip()
+            if nuevo_anio is not None:
+                if not anio_valido(nuevo_anio):
+                    print(ROJO + "❌ Año inválido." + RESET); return
+                l["anio"] = nuevo_anio
+            break
+    if not encontrado:
+        print(ROJO + f"❌ No existe libro con ISBN {isbn}." + RESET); return
+    guardar_todos(libros)
+    print(VERDE + "✏️ Libro actualizado." + RESET)
+
+def eliminar_libro(isbn):
+    """Elimina un libro por ISBN si existe."""
+    libros = leer_todos()
+    antes = len(libros)
+    libros = [l for l in libros if l["isbn"] != isbn]
+    if len(libros) == antes:
+        print(ROJO + f"❌ No existe libro con ISBN {isbn}." + RESET); return
+    guardar_todos(libros)
+    print(VERDE + "🗑️ Libro eliminado." + RESET)
+
+# ------------------ Búsqueda ------------------
+def buscar_libros(termino):
+    """Busca libros por título o autor (case-insensitive)."""
+    termino = termino.lower().strip()
+    resultados = []
+    for l in leer_todos():
+        if termino in str(l["titulo"]).lower() or termino in str(l["autor"]).lower():
+            resultados.append(l)
+    if not resultados:
+        print(AMARILLO + "⚠️ Sin coincidencias." + RESET); return
+    print("🔎 Resultados:")
+    for r in resultados:
+        print(f"- {r['titulo']} ({r['autor']}) | ISBN={r['isbn']} | Año={r['anio']}")
+
+# ------------------ Menú simple ------------------
+def menu():
+    crear_archivo_si_no_existe()
+    while True:
+        print("\n===== MENÚ BIBLIOTECA =====")
+        print("1. Crear libro")
+        print("2. Listar libros")
+        print("3. Actualizar libro")
+        print("4. Eliminar libro")
+        print("5. Buscar por título/autor")
+        print("6. Salir")
+        op = input("Elige (1-6): ").strip()
+
+        if op == "1":
+            isbn = input("ISBN: ").strip()
+            titulo = input("Título: ").strip()
+            autor = input("Autor: ").strip()
+            try:
+                anio = int(input("Año (1000-2100): ").strip())
+            except ValueError:
+                print(ROJO + "❌ Año debe ser entero." + RESET); continue
+            crear_libro(isbn, titulo, autor, anio)
+
+        elif op == "2":
+            listar_libros()
+
+        elif op == "3":
+            isbn = input("ISBN a actualizar: ").strip()
+            nt = input("Nuevo título (vacío = no cambiar): ").strip()
+            na = input("Nuevo autor (vacío = no cambiar): ").strip()
+            nan = input("Nuevo año (vacío = no cambiar): ").strip()
+            nuevo_titulo = nt if nt else None
+            nuevo_autor = na if na else None
+            nuevo_anio = None
+            if nan:
+                try:
+                    nuevo_anio = int(nan)
+                except ValueError:
+                    print(ROJO + "❌ Año debe ser entero." + RESET); continue
+            actualizar_libro(isbn, nuevo_titulo, nuevo_autor, nuevo_anio)
+
+        elif op == "4":
+            isbn = input("ISBN a eliminar: ").strip()
+            eliminar_libro(isbn)
+
+        elif op == "5":
+            termino = input("Término de búsqueda: ").strip()
+            buscar_libros(termino)
+
+        elif op == "6":
+            print(VERDE + "👋 Hasta pronto." + RESET); break
+        else:
+            print(AMARILLO + "⚠️ Opción inválida." + RESET)
+
+if __name__ == "__main__":
+    menu()

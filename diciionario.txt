@@ -1,0 +1,139 @@
+# ------------------------------------------------------------
+# CRUD con Diccionarios en Python
+# ------------------------------------------------------------
+# Este programa simula una "tabla de personas" usando un diccionario.
+# Cada persona se guarda con un ID único como clave.
+# El valor asociado a cada clave es otro diccionario con nombre y edad.
+# ------------------------------------------------------------
+
+# Diccionario inicial con algunos registros
+personas = {
+    1: {"nombre": "Carlos", "edad": 25},
+    2: {"nombre": "Ana", "edad": 30},
+    3: {"nombre": "Luis", "edad": 28}
+}
+
+# ------------------------------------------------------------
+# FUNCIÓN: Validar que un número sea entero positivo
+# ------------------------------------------------------------
+def es_entero_positivo(valor):
+    """
+    Verifica que 'valor' sea un número entero positivo.
+    - isinstance(valor, int) → revisa que sea un entero.
+    - valor > 0 → revisa que sea mayor que cero.
+    """
+    return isinstance(valor, int) and valor > 0
+
+
+# ------------------------------------------------------------
+# CREATE: Crear una nueva persona
+# ------------------------------------------------------------
+def crear_persona(diccionario, id, nombre, edad):
+    """
+    Crea una nueva persona en el diccionario.
+    Validaciones:
+    - El ID debe ser entero positivo y único.
+    - El nombre debe ser texto no vacío.
+    - La edad debe ser entero positivo.
+    """
+    if not es_entero_positivo(id):
+        print("❌ ID inválido. Debe ser entero positivo.")
+        return
+    if id in diccionario:
+        print(f"❌ El ID {id} ya existe.")
+        return
+    if not isinstance(nombre, str) or not nombre.strip():
+        print("❌ Nombre inválido. Debe ser texto no vacío.")
+        return
+    if not es_entero_positivo(edad):
+        print("❌ Edad inválida. Debe ser entero positivo.")
+        return
+
+    diccionario[id] = {"nombre": nombre.strip(), "edad": edad}
+    print(f"✅ Persona creada: ID={id}, Nombre={nombre}, Edad={edad}")
+
+
+# ------------------------------------------------------------
+# READ: Mostrar todas las personas
+# ------------------------------------------------------------
+def leer_personas(diccionario):
+    """
+    Muestra todas las personas guardadas en el diccionario.
+    """
+    if not diccionario:
+        print("⚠️ No hay registros.")
+        return
+    for id, datos in diccionario.items():
+        print(f"ID: {id} | Nombre: {datos['nombre']} | Edad: {datos['edad']}")
+
+
+# ------------------------------------------------------------
+# UPDATE: Actualizar una persona existente
+# ------------------------------------------------------------
+def actualizar_persona(diccionario, id, nuevo_nombre=None, nueva_edad=None):
+    """
+    Actualiza los datos de una persona.
+    Validaciones:
+    - El ID debe existir.
+    - El nuevo nombre debe ser texto válido (si se pasa).
+    - La nueva edad debe ser entero positivo (si se pasa).
+    """
+    if id not in diccionario:
+        print(f"❌ No existe persona con ID {id}.")
+        return
+
+    if nuevo_nombre is not None:
+        if not isinstance(nuevo_nombre, str) or not nuevo_nombre.strip():
+            print("❌ Nombre inválido.")
+            return
+        diccionario[id]["nombre"] = nuevo_nombre.strip()
+
+    if nueva_edad is not None:
+        if not es_entero_positivo(nueva_edad):
+            print("❌ Edad inválida.")
+            return
+        diccionario[id]["edad"] = nueva_edad
+
+    print(f"✏️ Persona con ID={id} actualizada: {diccionario[id]}")
+
+
+# ------------------------------------------------------------
+# DELETE: Eliminar una persona
+# ------------------------------------------------------------
+def eliminar_persona(diccionario, id):
+    """
+    Elimina una persona del diccionario por su ID.
+    Validaciones:
+    - El ID debe existir.
+    """
+    if id not in diccionario:
+        print(f"❌ No existe persona con ID {id}.")
+        return
+
+    del diccionario[id]
+    print(f"🗑️ Persona con ID={id} eliminada.")
+
+
+# ------------------------------------------------------------
+# DEMO DEL CRUD
+# ------------------------------------------------------------
+print("\n📖 Estado inicial:")
+leer_personas(personas)
+
+print("\n➕ Crear nueva persona:")
+crear_persona(personas, 4, "Marta", 22)
+
+print("\n📖 Después de crear:")
+leer_personas(personas)
+
+print("\n✏️ Actualizar persona con ID=2:")
+actualizar_persona(personas, 2, nuevo_nombre="Andrea", nueva_edad=31)
+
+print("\n📖 Después de actualizar:")
+leer_personas(personas)
+
+print("\n🗑️ Eliminar persona con ID=3:")
+eliminar_persona(personas, 3)
+
+print("\n📖 Después de eliminar:")
+leer_personas(personas)
