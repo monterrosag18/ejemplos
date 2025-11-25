@@ -195,3 +195,160 @@ def menu():
 
 if __name__ == "__main__":
     menu()
+
+# ------------------------------------------------------------
+# Sistema de Inventario y Ventas con Reportes
+# Autor: Carlos Andrés Monterrosa Gallego (versión pedagógica)
+# ------------------------------------------------------------
+# Funcionalidades:
+# 1. CRUD de productos (crear, listar, actualizar, eliminar).
+# 2. Registrar ventas con validación de stock y descuentos.
+# 3. Reportes: top 3 productos más vendidos, ventas por autor,
+#    ingresos brutos y netos.
+# ------------------------------------------------------------
+
+# Lista de productos pre-cargados
+productos = [
+    {"titulo": "Cien años de soledad", "autor": "Gabriel García Márquez", "categoria": "Novela", "precio": 50.0, "stock": 10},
+    {"titulo": "El Principito", "autor": "Antoine de Saint-Exupéry", "categoria": "Infantil", "precio": 30.0, "stock": 15},
+    {"titulo": "Python Crash Course", "autor": "Eric Matthes", "categoria": "Programación", "precio": 60.0, "stock": 8},
+    {"titulo": "Don Quijote", "autor": "Miguel de Cervantes", "categoria": "Clásico", "precio": 45.0, "stock": 12},
+    {"titulo": "Hábitos Atómicos", "autor": "James Clear", "categoria": "Autoayuda", "precio": 40.0, "stock": 20}
+]
+
+# Lista de ventas
+ventas = []
+
+# -------------------------------
+# Funciones de validación
+# -------------------------------
+def pedir_entero(mensaje):
+    """Pide un número entero y valida que sea positivo."""
+    while True:
+        try:
+            valor = int(input(mensaje))
+            if valor >= 0:
+                return valor
+            else:
+                print("⚠️ Debe ser un número entero positivo.")
+        except ValueError:
+            print("⚠️ Entrada inválida, intente de nuevo.")
+
+def pedir_flotante(mensaje):
+    """Pide un número flotante y valida que sea positivo."""
+    while True:
+        try:
+            valor = float(input(mensaje))
+            if valor > 0:
+                return valor
+            else:
+                print("⚠️ Debe ser un número mayor que 0.")
+        except ValueError:
+            print("⚠️ Entrada inválida, intente de nuevo.")
+
+def pedir_descuento(mensaje):
+    """Valida que el descuento esté entre 0 y 1 (ejemplo: 0.2 = 20%)."""
+    while True:
+        try:
+            valor = float(input(mensaje))
+            if 0 <= valor <= 1:
+                return valor
+            else:
+                print("⚠️ El descuento debe estar entre 0 y 1.")
+        except ValueError:
+            print("⚠️ Entrada inválida, intente de nuevo.")
+
+# -------------------------------
+# CRUD de productos
+# -------------------------------
+def listar_productos():
+    if not productos:
+        print("📂 No hay productos registrados.")
+    else:
+        print("\n📋 Lista de productos:")
+        for i, p in enumerate(productos, start=1):
+            print(f"{i}. {p['titulo']} | Autor: {p['autor']} | Precio: ${p['precio']} | Stock: {p['stock']}")
+
+def agregar_producto():
+    print("\n➕ Agregar producto")
+    titulo = input("Título: ")
+    autor = input("Autor: ")
+    categoria = input("Categoría: ")
+    precio = pedir_flotante("Precio: ")
+    stock = pedir_entero("Stock inicial: ")
+    productos.append({"titulo": titulo, "autor": autor, "categoria": categoria, "precio": precio, "stock": stock})
+    print("✅ Producto agregado correctamente.")
+
+# -------------------------------
+# Registro de ventas
+# -------------------------------
+def registrar_venta():
+    listar_productos()
+    indice = pedir_entero("Ingrese el número del producto a vender: ")
+    if 1 <= indice <= len(productos):
+        producto = productos[indice - 1]
+        cantidad = pedir_entero("Cantidad a vender: ")
+        if cantidad <= producto["stock"] and cantidad > 0:
+            descuento = pedir_descuento("Ingrese descuento (ejemplo 0.2 = 20%): ")
+            bruto = producto["precio"] * cantidad
+            neto = bruto * (1 - descuento)
+            producto["stock"] -= cantidad
+            ventas.append({
+                "cliente": input("Cliente: "),
+                "producto": producto["titulo"],
+                "autor": producto["autor"],
+                "cantidad": cantidad,
+                "bruto": bruto,
+                "neto": neto
+            })
+            print(f"✅ Venta registrada. Bruto: ${bruto}, Neto: ${neto}")
+        else:
+            print("⚠️ Stock insuficiente o cantidad inválida.")
+    else:
+        print("⚠️ Índice inválido.")
+
+# -------------------------------
+# Reportes
+# -------------------------------
+def reporte_por_autor():
+    print("\n📊 Ventas agrupadas por autor:")
+    if not ventas:
+        print("📂 No hay ventas registradas.")
+        return
+    autores = {}
+    for v in ventas:
+        if v["autor"] not in autores:
+            autores[v["autor"]] = {"bruto": 0, "neto": 0, "unidades": 0}
+        autores[v["autor"]]["bruto"] += v["bruto"]
+        autores[v["autor"]]["neto"] += v["neto"]
+        autores[v["autor"]]["unidades"] += v["cantidad"]
+    for autor, datos in autores.items():
+        print(f"Autor: {autor} | Unidades: {datos['unidades']} | Bruto: ${datos['bruto']} | Neto: ${datos['neto']}")
+
+# -------------------------------
+# Menú principal
+# -------------------------------
+def menu():
+    while True:
+        print("\n--- MENÚ PRINCIPAL ---")
+        print("1. Listar productos")
+        print("2. Agregar producto")
+        print("3. Registrar venta")
+        print("4. Reporte por autor")
+        print("0. Salir")
+
+        opcion = input("👉 Seleccione una opción: ")
+        if opcion == "1": listar_productos()
+        elif opcion == "2": agregar_producto()
+        elif opcion == "3": registrar_venta()
+        elif opcion == "4": reporte_por_autor()
+        elif opcion == "0":
+            print("👋 Saliendo del sistema...")
+            break
+        else:
+            print("⚠️ Opción inválida.")
+
+# -------------------------------
+# Ejecución del programa
+# -------------------------------
+menu()
