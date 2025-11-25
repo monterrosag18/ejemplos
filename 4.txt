@@ -352,3 +352,42 @@ def menu():
 # Ejecución del programa
 # -------------------------------
 menu()
+
+# -------------------------------
+# Función para eliminar producto
+# -------------------------------
+def eliminar_producto():
+    """Permite eliminar un producto del inventario por índice."""
+    listar_productos()  # Primero mostramos la lista para que el usuario vea las opciones
+    indice = pedir_entero("Ingrese el número del producto a eliminar: ")
+    
+    # Validamos que el índice esté dentro del rango
+    if 1 <= indice <= len(productos):
+        eliminado = productos.pop(indice - 1)  # quitamos el producto de la lista
+        print(f"🗑️ Producto '{eliminado['titulo']}' eliminado correctamente.")
+    else:
+        print("⚠️ Índice inválido. No se pudo eliminar el producto.")
+
+
+def menu():
+    while True:
+        print("\n--- MENÚ PRINCIPAL ---")
+        print("1. Listar productos")
+        print("2. Agregar producto")
+        print("3. Registrar venta")
+        print("4. Reporte por autor")
+        print("5. Eliminar producto")   # 👈 Nueva opción
+        print("0. Salir")
+
+        opcion = input("👉 Seleccione una opción: ")
+        if opcion == "1": listar_productos()
+        elif opcion == "2": agregar_producto()
+        elif opcion == "3": registrar_venta()
+        elif opcion == "4": reporte_por_autor()
+        elif opcion == "5": eliminar_producto()   # 👈 Llamada a la función
+        elif opcion == "0":
+            print("👋 Saliendo del sistema...")
+            break
+        else:
+            print("⚠️ Opción inválida.")
+
